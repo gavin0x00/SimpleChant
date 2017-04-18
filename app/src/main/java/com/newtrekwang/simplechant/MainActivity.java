@@ -1,17 +1,19 @@
 package com.newtrekwang.simplechant;
 
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -28,9 +30,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
            switch (msg.what){
                case 100:
                    String mess= (String) msg.obj;
-                   textView_message.append(mess);
+                   textView_message.append(mess+"\n");
                    break;
                case 101:
+                   String sendMsg= (String) msg.obj;
+                   textView_message.append("已发送："+sendMsg+"\n");
+                   editText_message.setText("");
+                   break;
+               case 103:
+                   editText_ip.setFocusable(true);
+                   btn_connect.setClickable(true);
+                   Toast.makeText(MainActivity.this, "连接异常！", Toast.LENGTH_SHORT).show();
+                   break;
+               case 104:
+                   Toast.makeText(MainActivity.this, "连接成功！", Toast.LENGTH_SHORT).show();
+                   editText_ip.setFocusable(false);
+                   btn_connect.setClickable(false);
+                   break;
+               case 105:
+                   editText_ip.setFocusable(true);
+                   btn_connect.setClickable(true);
+                   Toast.makeText(MainActivity.this, "连接超时！", Toast.LENGTH_SHORT).show();
                    break;
                default:
                    break;
@@ -46,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         btn_connect= (Button) findViewById(R.id.btn_connect);
         btn_send= (Button) findViewById(R.id.btn_send);
+        textView_message= (TextView) findViewById(R.id.messageTextView);
 
         editText_ip= (EditText) findViewById(R.id.et_ip);
         editText_message= (EditText) findViewById(R.id.et_messge);
@@ -67,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (isConnected&&socket!=null){
                     String message=editText_message.getText().toString();
                     if (!TextUtils.isEmpty(message)){
-                        new WriteThread(handler,socket,message).start();
+                       write(message);
                     }
                 }
                 break;
@@ -75,6 +96,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
         }
     }
+
+    private void write( String str){
+        final String messageStr=str;
+
+        new Thread(){
+            @Override
+            public void run() {
+                try {
+                    OutputStream outputStream=socket.getOutputStream();
+                    outputStream.write(messageStr.getBytes());
+                    outputStream.flush();
+
+                    Message message=new Message();
+                    message.what=101;
+                    message.obj=messageStr;
+                    handler.sendMessage(message);
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    isConnected=false;
+                    socket=null;
+                    handler.sendEmptyMessage(103);
+                }
+            }
+        }.start();
+    }
+
 
     private class ConnectThread extends Thread{
         private String ip;
@@ -88,17 +136,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 if (socket.isConnected()){
                     isConnected=true;
+                    handler.sendEmptyMessage(104);
+
                     new ReadThread(handler,socket).start();
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
+                if (e instanceof ConnectException){
+                    handler.sendEmptyMessage(105);
+                    return;
+                }
                 isConnected=false;
                 socket=null;
-                Log.e(TAG, "run: !!!!!!!!!!!!!!!"+e.toString() );
+               handler.sendEmptyMessage(103);
             }
         }
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (socket!=null){
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
+        }
+
+    }
 }

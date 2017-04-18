@@ -28,9 +28,9 @@ class ReadThread extends Thread{
                 message.obj=messa;
                 handler.sendMessage(message);
             }
-            inputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
+            handler.sendEmptyMessage(103);
         }
 
     }

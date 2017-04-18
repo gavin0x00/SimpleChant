@@ -12,8 +12,10 @@ public class Server {
     public static List<Socket> socketList=new ArrayList<>();
 
     public static void main(String[] args) {
+
       Server server=new Server();
       server.startListen();
+
     }
 
     /**
