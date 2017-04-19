@@ -28,28 +28,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void handleMessage(Message msg) {
            switch (msg.what){
-               case 100:
+               case 100://收到的消息
                    String mess= (String) msg.obj;
                    textView_message.append(mess+"\n");
                    break;
-               case 101:
+               case 101://发送的消息
                    String sendMsg= (String) msg.obj;
                    textView_message.append("已发送："+sendMsg+"\n");
                    editText_message.setText("");
                    break;
-               case 103:
+               case 103://连接异常1
+                   editText_ip.setClickable(true);
                    editText_ip.setFocusable(true);
-                   btn_connect.setClickable(true);
-                   Toast.makeText(MainActivity.this, "连接异常！", Toast.LENGTH_SHORT).show();
+                   btn_connect.setText("连接");
+                   Toast.makeText(MainActivity.this, "连接已断开！", Toast.LENGTH_SHORT).show();
                    break;
-               case 104:
+               case 104://连接异常2
                    Toast.makeText(MainActivity.this, "连接成功！", Toast.LENGTH_SHORT).show();
                    editText_ip.setFocusable(false);
-                   btn_connect.setClickable(false);
+                   btn_connect.setText("断开");
                    break;
-               case 105:
+               case 105://连接超时
+                   editText_ip.setClickable(true);
                    editText_ip.setFocusable(true);
-                   btn_connect.setClickable(true);
+                   btn_connect.setText("连接");
                    Toast.makeText(MainActivity.this, "连接超时！", Toast.LENGTH_SHORT).show();
                    break;
                default:
@@ -79,9 +81,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.btn_connect:
-                String ip=editText_ip.getText().toString();
-                if (!TextUtils.isEmpty(ip)){
-                    new ConnectThread(ip).start();
+                if (btn_connect.getText().toString().equals("连接")){
+                    String ip=editText_ip.getText().toString();
+                    if (!TextUtils.isEmpty(ip)){
+                        new ConnectThread(ip).start();
+                    }
+                }else {
+                    disConnect();
                 }
                 break;
             case R.id.btn_send:
@@ -137,12 +143,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (socket.isConnected()){
                     isConnected=true;
                     handler.sendEmptyMessage(104);
-
+//                  开启读线程
                     new ReadThread(handler,socket).start();
                 }
 
             } catch (IOException e) {
                 e.printStackTrace();
+//                异常处理
                 if (e instanceof ConnectException){
                     handler.sendEmptyMessage(105);
                     return;
@@ -153,7 +160,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     }
-
+/**
+ * 界面销毁前断开连接，释放资源
+ */
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -163,8 +172,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
         }
-
+    }
+    /**
+     * 断开连接
+     */
+    private void disConnect(){
+        if (socket!=null){
+            try {
+                socket.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

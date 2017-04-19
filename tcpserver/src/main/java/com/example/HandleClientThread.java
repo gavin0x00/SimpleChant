@@ -23,7 +23,6 @@ public class HandleClientThread extends Thread {
                 bufferedWriter.write(content);
                 bufferedWriter.flush();
             }
-//            bufferedWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -34,22 +33,26 @@ public class HandleClientThread extends Thread {
         try {
             InputStream inputStream=socket.getInputStream();
             int readSize=-1;
-            byte[] bytes=new byte[10];
+            byte[] bytes=new byte[50];
             while ((readSize=inputStream.read(bytes))!=-1){
                 String content=new String(bytes);
                 System.out.println(socketId+content);
                 for (Socket soc :
                         Server.socketList) {
-                    if (!soc.getInetAddress().equals(socket.getInetAddress())){
+                    if (soc!=null&&(!soc.getInetAddress().equals(socket.getInetAddress()))){
                     write(soc,content);
                     }
                 }
+                bytes=new byte[50];
             }
             inputStream.close();
             socket.close();
             Server.socketList.remove(socket);
         } catch (IOException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            if (socket!=null){
+            System.out.println("client:"+socket.getInetAddress().toString()+" has disconect!");
+            }
         }
     }
 }

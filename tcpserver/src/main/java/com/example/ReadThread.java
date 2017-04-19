@@ -2,7 +2,6 @@ package com.example;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.Socket;
 
 /**
@@ -19,9 +18,10 @@ public class ReadThread extends Thread {
         try {
             InputStream inputStream=socket.getInputStream();
             int readSize=-1;
-            byte[] bytes=new byte[10];
+            byte[] bytes=new byte[50];
             while ((readSize=inputStream.read(bytes))!=-1){
-                System.out.println("receive"+new String(bytes));
+                System.out.println("receive  "+new String(bytes));
+                bytes=new byte[50];
             }
             inputStream.close();
         } catch (IOException e) {

@@ -17,7 +17,7 @@ public class Client {
             if (socket==null){
                 return;
             }
-
+            System.out.println("link Server Success!");
             new ReadThread(socket).start();
 
             BufferedWriter bufferedWriter=new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -29,6 +29,7 @@ public class Client {
                 }
                 bufferedWriter.write(input);
                 bufferedWriter.flush();
+                input=null;
             }
             bufferedWriter.close();
             socket.close();
